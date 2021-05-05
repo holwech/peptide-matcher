@@ -1,0 +1,67 @@
+#!csharp
+
+var peptides_file = System.IO.File.ReadAllText("../data/SARS_Cov_2_peptide_seqs_9mers.txt");
+var proteins_file = System.IO.File.ReadAllText("../data/UP000005640_9606.fasta");
+
+#!csharp
+
+var peptides = new HashSet<string>();
+foreach (var line in peptides_file.Split("\n")) {
+    peptides.Add(line.Split("\t").Last().Trim());
+}
+
+#!csharp
+
+public Dictionary<string, string> FastaToDict(string file) {
+    var mappedProteins = new Dictionary<string, string>();
+
+    var key = "";
+
+    var rows = file.Split("\n");
+    Array.Resize(ref rows, rows.Length - 1);
+
+    foreach (var row in rows) {
+        if (row[0].Equals('>')) {
+            key = row.Split('|')[1];
+            mappedProteins[key] = "";
+        }
+        else {
+            mappedProteins[key] += row;
+        }
+    }
+    return mappedProteins;
+}
+
+#!csharp
+
+var proteins = FastaToDict(proteins_file);
+
+#!csharp
+
+public List<(string, string)> JoachimSearch(HashSet<string> peptides, Dictionary<string, string> proteins, int peptideLen = 9) {
+    var matches = new List<(string, string)> ();
+
+    foreach (KeyValuePair<string, string> entry in proteins) {
+        for (var i = 0; i < entry.Value.Length - peptideLen + 1; i++) {
+            var sequence = entry.Value.Substring(i, peptideLen);
+            //Console.WriteLine($"waht {i}, {i + peptideLen}, {entry.Value.Length}, {sequence}");
+            if (peptides.Contains(sequence)) {
+                matches.Add((entry.Key, sequence));
+            }
+        }
+    }
+    return matches;
+}
+
+#!csharp
+
+using System.Diagnostics;
+
+Stopwatch sw = new();
+sw.Start();
+var result = JoachimSearch(peptides, proteins);
+Console.WriteLine(sw.ElapsedMilliseconds)
+
+#!csharp
+
+result
